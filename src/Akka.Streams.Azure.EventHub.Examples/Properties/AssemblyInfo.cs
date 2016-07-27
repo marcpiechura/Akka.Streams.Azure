@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // Allgemeine Informationen über eine Assembly werden über die folgenden 
 // Attribute gesteuert. Ändern Sie diese Attributwerte, um die Informationen zu ändern,
 // die einer Assembly zugeordnet sind.
-[assembly: AssemblyTitle("Akka.Streams.Azure.EventHub.Tests")]
+[assembly: AssemblyTitle("Akka.Streams.Azure.EventHub.Examples")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Akka.Streams.Azure.EventHub.Tests")]
+[assembly: AssemblyProduct("Akka.Streams.Azure.EventHub.Examples")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // Die folgende GUID bestimmt die ID der Typbibliothek, wenn dieses Projekt für COM verfügbar gemacht wird
-[assembly: Guid("bf83cadd-22b2-4936-995e-4a09e329df81")]
+[assembly: Guid("2311a902-2083-4491-aea2-ceb7031479b3")]
 
 // Versionsinformationen für eine Assembly bestehen aus den folgenden vier Werten:
 //
