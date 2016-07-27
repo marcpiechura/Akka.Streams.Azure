@@ -15,10 +15,10 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
         [Fact]
         public void A_QueueSink_should_add_elements_to_the_queue()
         {
-            var messages = new[] {"1", "2"};    
+            var messages = new[] {"1", "2"};
             var t = Source.From(messages)
                 .Select(x => new CloudQueueMessage(x))
-                .RunWith(QueueSink.Create(Queue), Materializer);
+                .ToStorageQueue(Queue, Materializer);
 
             t.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue();
             Queue.GetMessages(2).Select(x => x.AsString).ShouldAllBeEquivalentTo(messages);
@@ -47,8 +47,8 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
                 .WithAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.ResumingDecider));
 
             var t = Source.From(messages)
-                  .Select(x => new CloudQueueMessage(x))
-                  .RunWith(queueSink, Materializer);
+                .Select(x => new CloudQueueMessage(x))
+                .RunWith(queueSink, Materializer);
 
             Thread.Sleep(1000);
             Queue.Create();
@@ -64,9 +64,10 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
                 .WithAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.RestartingDecider));
 
             var t = this.SourceProbe<string>()
-                  .Select(x => new CloudQueueMessage(x))
-                  .ToMaterialized(queueSink, Keep.Both)
-                  .Run(Materializer);
+                .Select(x => new CloudQueueMessage(x))
+                .ToMaterialized(queueSink, Keep.Both)
+                .Run(Materializer);
+
             var probe = t.Item1;
             var task = t.Item2;
             
