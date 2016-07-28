@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
+using Akka.Util;
 using Microsoft.ServiceBus.Messaging;
 
 namespace Akka.Streams.Azure.EventHub
 {
+    /// <summary>
+    ///  A <see cref="Source{TOut,TMat}"/> for the Azure EventHub
+    /// that materialized into an <see cref="IEventProcessor"/>
+    /// </summary>
     public class EventHubSource : GraphStageWithMaterializedValue<SourceShape<Tuple<PartitionContext, EventData>>, IEventProcessor>
     {
         #region Logic
@@ -29,6 +36,7 @@ namespace Akka.Streams.Azure.EventHub
 
         private sealed class Logic : GraphStageLogic, IEventProcessor
         {
+            private readonly AtomicBoolean _started = new AtomicBoolean();
             private readonly EventHubSource _source;
             private Action<TaskCompletionSource<NotUsed>> _openCallback;
             private Action<TaskCompletionSource<NotUsed>> _closeCallback;
@@ -49,10 +57,15 @@ namespace Akka.Streams.Azure.EventHub
                 _openCallback = GetAsyncCallback<TaskCompletionSource<NotUsed>>(OnOpen);
                 _closeCallback = GetAsyncCallback<TaskCompletionSource<NotUsed>>(OnClose);
                 _processCallback = GetAsyncCallback<ProcessContext>(OnProcessEvents);
+                _started.CompareAndSet(false, true);
             }
 
             public Task OpenAsync(PartitionContext context)
             {
+                // It's possible that PreStart wasn't called before this code executes
+                while (!_started)
+                    Thread.Sleep(500);
+
                 var completion = new TaskCompletionSource<NotUsed>();
                 _openCallback(completion);
                 return completion.Task;
@@ -121,9 +134,23 @@ namespace Akka.Streams.Azure.EventHub
 
         #endregion
 
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure EventHub  
+        /// </summary>
+        /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed if set to true</param>
+        /// <returns>The processor</returns>
+        public static Source<Tuple<PartitionContext, EventData>, IEventProcessor> Create(bool createCheckpointOnClose = true)
+        {
+            return Source.FromGraph(new EventHubSource(createCheckpointOnClose));
+        }
+
         private readonly bool _createCheckpointOnClose;
 
-        public EventHubSource(bool createCheckpointOnClose)
+        /// <summary>
+        /// Create a new instance of the <see cref="EventHubSource"/> 
+        /// </summary>
+        /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed if set to true</param>
+        public EventHubSource(bool createCheckpointOnClose = true)
         {
             _createCheckpointOnClose = createCheckpointOnClose;
             Shape = new SourceShape<Tuple<PartitionContext, EventData>>(Out);
