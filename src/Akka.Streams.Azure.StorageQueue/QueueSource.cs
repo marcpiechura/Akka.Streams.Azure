@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Akka.Streams.Azure.Utils;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using Akka.Streams.Supervision;

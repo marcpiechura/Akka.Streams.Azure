@@ -90,11 +90,16 @@
     <Compile Include="QueueSink.cs" />
     <Compile Include="QueueSource.cs" />
     <Compile Include="RequestOptions.cs" />
-    <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Akka.Streams.Azure.Utils\Akka.Streams.Azure.Utils.csproj">
+      <Project>{eb51295a-dc6d-4555-9d68-9f45501db772}</Project>
+      <Name>Akka.Streams.Azure.Utils</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

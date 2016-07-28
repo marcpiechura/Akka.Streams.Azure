@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Akka.Streams.Azure.Utils;
 using Akka.Streams.Dsl;
 using Akka.Streams.Stage;
 using Akka.Streams.Supervision;
@@ -17,13 +18,15 @@ namespace Akka.Streams.Azure.StorageQueue
         private sealed class Logic : GraphStageLogic
         {
             private readonly QueueSink _sink;
+            private readonly TaskCompletionSource<NotUsed> _completion;
             private Action<Tuple<Task, CloudQueueMessage>> _messageAdded;
             private bool _isAddInProgress;
             private readonly Decider _decider;
 
-            public Logic(QueueSink sink, Attributes attributes) : base(sink.Shape)
+            public Logic(QueueSink sink, Attributes attributes, TaskCompletionSource<NotUsed> completion) : base(sink.Shape)
             {
                 _sink = sink;
+                _completion = completion;
                 _decider = attributes.GetDeciderOrDefault();
 
                 SetHandler(sink.In,
@@ -37,7 +40,7 @@ namespace Akka.Streams.Azure.StorageQueue
                     },
                     onUpstreamFailure: ex =>
                     {
-                        sink._completion.TrySetException(ex);
+                        _completion.TrySetException(ex);
                         // We have set KeepGoing to true so we need to fail the stage manually
                         FailStage(ex);
                     });
@@ -72,7 +75,7 @@ namespace Akka.Streams.Azure.StorageQueue
                     {
                         case Directive.Stop:
                             // Throw
-                            _sink._completion.TrySetException(task.Exception);
+                            _completion.TrySetException(task.Exception);
                             FailStage(task.Exception);
                             break;
                         case Directive.Resume:
@@ -80,25 +83,28 @@ namespace Akka.Streams.Azure.StorageQueue
                             TryAdd(message);
                             break;
                         case Directive.Restart:
-                            // Take the next element
-                            Pull(_sink.In);
+                            // Take the next element or complete
+                            PullOrComplete();
                             break;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
                 }
                 else
-                {
-                    if (IsClosed(_sink.In))
-                        Finish();
-                    else
-                        Pull(_sink.In);
-                }
+                    PullOrComplete();
+            }
+
+            private void PullOrComplete()
+            {
+                if (IsClosed(_sink.In))
+                    Finish();
+                else
+                    Pull(_sink.In);
             }
 
             private void Finish()
             {
-                _sink._completion.TrySetResult(NotUsed.Instance);
+                _completion.TrySetResult(NotUsed.Instance);
                 CompleteStage();
             }
         }
@@ -118,14 +124,12 @@ namespace Akka.Streams.Azure.StorageQueue
 
         private readonly CloudQueue _queue;
         private readonly AddRequestOptions _options;
-        private TaskCompletionSource<NotUsed> _completion;
 
         /// <summary>
         /// Create a new instance of the <see cref="QueueSink"/>
         /// </summary>
         /// <param name="queue">The queue</param>
         /// <param name="options">The options for the <see cref="CloudQueue.AddMessageAsync(CloudQueueMessage)"/> call</param>
-        /// <returns>The <see cref="Sink{TIn,TMat}"/> for the Azure Storage Queue</returns>
         public QueueSink(CloudQueue queue, AddRequestOptions options = null)
         {
             _queue = queue;
@@ -135,14 +139,14 @@ namespace Akka.Streams.Azure.StorageQueue
 
         public Inlet<CloudQueueMessage> In { get; } = new Inlet<CloudQueueMessage>("QueueSink.In");
 
+        public override SinkShape<CloudQueueMessage> Shape { get; }
+
         protected override Attributes InitialAttributes { get; } = Attributes.CreateName("QueueSink");
 
         public override ILogicAndMaterializedValue<Task> CreateLogicAndMaterializedValue(Attributes inheritedAttributes)
         {
-            _completion = new TaskCompletionSource<NotUsed>();
-            return new LogicAndMaterializedValue<Task>(new Logic(this, inheritedAttributes), _completion.Task);
+            var completion = new TaskCompletionSource<NotUsed>();
+            return new LogicAndMaterializedValue<Task>(new Logic(this, inheritedAttributes, completion), completion.Task);
         }
-
-        public override SinkShape<CloudQueueMessage> Shape { get; }
     }
 }

@@ -1,8 +1,8 @@
 ﻿using Akka.Streams.Supervision;
 
-namespace Akka.Streams.Azure.StorageQueue
+namespace Akka.Streams.Azure.Utils
 {
-    internal static class Utils
+    public static class AttributesExtensions
     {
         public static Decider GetDeciderOrDefault(this Attributes attributes)
         {

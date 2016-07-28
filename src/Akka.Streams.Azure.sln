@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Streams.Azure.EventHub
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Streams.Azure.EventHub.Examples", "Akka.Streams.Azure.EventHub.Examples\Akka.Streams.Azure.EventHub.Examples.csproj", "{2311A902-2083-4491-AEA2-CEB7031479B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Akka.Streams.Azure.Utils", "Akka.Streams.Azure.Utils\Akka.Streams.Azure.Utils.csproj", "{EB51295A-DC6D-4555-9D68-9F45501DB772}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{2311A902-2083-4491-AEA2-CEB7031479B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2311A902-2083-4491-AEA2-CEB7031479B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2311A902-2083-4491-AEA2-CEB7031479B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB51295A-DC6D-4555-9D68-9F45501DB772}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB51295A-DC6D-4555-9D68-9F45501DB772}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB51295A-DC6D-4555-9D68-9F45501DB772}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB51295A-DC6D-4555-9D68-9F45501DB772}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

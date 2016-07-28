@@ -2,6 +2,6 @@
 {
     class Program
     {
-        static void Main() => SingleProcessorExample.Run();
+        static void Main() => MultiProcessorExample.Run();
     }
 }
