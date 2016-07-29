@@ -31,7 +31,7 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
         {
             Queue.AddMessage(new CloudQueueMessage("Test1"));
             
-            var probe = QueueSource.Create(Queue, pollIntervall: TimeSpan.FromSeconds(1))
+            var probe = QueueSource.Create(Queue, pollInterval: TimeSpan.FromSeconds(1))
                 .Take(3)
                 .Select(x => x.AsString)
                 .RunWith(this.SinkProbe<string>(), Materializer);
@@ -52,7 +52,7 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
         {
             Queue.AddMessage(new CloudQueueMessage("Test1"));
 
-            var probe = QueueSource.Create(Queue, pollIntervall: TimeSpan.FromSeconds(1))
+            var probe = QueueSource.Create(Queue, pollInterval: TimeSpan.FromSeconds(1))
                 .Select(x =>
                 {
                     Queue.DeleteMessage(x);
@@ -76,7 +76,7 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
         {
             Queue.DeleteIfExists();
 
-            var probe = QueueSource.Create(Queue, pollIntervall: TimeSpan.FromSeconds(1))
+            var probe = QueueSource.Create(Queue, pollInterval: TimeSpan.FromSeconds(1))
                 .Take(3)
                 .Select(x => x.AsString)
                 .RunWith(this.SinkProbe<string>(), Materializer);
@@ -89,7 +89,7 @@ namespace Akka.Streams.Azure.StorageQueue.Tests
         {
             Queue.DeleteIfExists();
 
-            var probe = QueueSource.Create(Queue, pollIntervall: TimeSpan.FromSeconds(1))
+            var probe = QueueSource.Create(Queue, pollInterval: TimeSpan.FromSeconds(1))
                 .Take(3)
                 .Select(x => x.AsString)
                 .WithAttributes(ActorAttributes.CreateSupervisionStrategy(Deciders.ResumingDecider))

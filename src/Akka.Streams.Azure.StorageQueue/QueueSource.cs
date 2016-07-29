@@ -49,14 +49,14 @@ namespace Akka.Streams.Azure.StorageQueue
                     if (_decider(task.Exception) == Directive.Stop)
                         FailStage(task.Exception);
                     else
-                        ScheduleOnce(TimerKey, _source._pollIntervall);
+                        ScheduleOnce(TimerKey, _source._pollInterval);
 
                     return;
                 }
 
                 // Try again if the queue is empty
                 if (task.Result == null || !task.Result.Any())
-                    ScheduleOnce(TimerKey, _source._pollIntervall);
+                    ScheduleOnce(TimerKey, _source._pollInterval);
                 else
                     EmitMultiple(_source.Out, task.Result);
             }
@@ -69,32 +69,32 @@ namespace Akka.Streams.Azure.StorageQueue
         /// </summary>
         /// <param name="queue">The queue</param>
         /// <param name="prefetchCount">The number of messages that should be read from the queue at once</param>
-        /// <param name="pollIntervall">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
         /// <param name="options">The options for the <see cref="CloudQueue.GetMessagesAsync(int)"/> call</param>
         /// <returns>The <see cref="Source{TOut,TMat}"/> for the Azure Storage Queue</returns>
-        public static Source<CloudQueueMessage, NotUsed> Create(CloudQueue queue, int prefetchCount = 10, TimeSpan? pollIntervall = null, GetRequestOptions options = null)
+        public static Source<CloudQueueMessage, NotUsed> Create(CloudQueue queue, int prefetchCount = 10, TimeSpan? pollInterval = null, GetRequestOptions options = null)
         {
-            return Source.FromGraph(new QueueSource(queue, prefetchCount, pollIntervall, options));
+            return Source.FromGraph(new QueueSource(queue, prefetchCount, pollInterval, options));
         }
 
         private readonly CloudQueue _queue;
         private readonly int _prefetchCount;
         private readonly GetRequestOptions _options;
-        private readonly TimeSpan _pollIntervall;
+        private readonly TimeSpan _pollInterval;
 
         /// <summary>
         /// Create a new instance of the <see cref="QueueSource"/>
         /// </summary>
         /// <param name="queue">The queue</param>
         /// <param name="prefetchCount">The number of messages that should be read from the queue at once</param>
-        /// <param name="pollIntervall">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
         /// <param name="options">The options for the <see cref="CloudQueue.GetMessagesAsync(int)"/> call</param>
-        public QueueSource(CloudQueue queue, int prefetchCount = 10, TimeSpan? pollIntervall = null, GetRequestOptions options = null)
+        public QueueSource(CloudQueue queue, int prefetchCount = 10, TimeSpan? pollInterval = null, GetRequestOptions options = null)
         {
             _queue = queue;
             _prefetchCount = prefetchCount;
             _options = options ?? new GetRequestOptions();
-            _pollIntervall = pollIntervall ?? TimeSpan.FromSeconds(10);
+            _pollInterval = pollInterval ?? TimeSpan.FromSeconds(10);
 
             Shape = new SourceShape<CloudQueueMessage>(Out);
         }
