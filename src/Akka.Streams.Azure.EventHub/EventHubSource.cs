@@ -101,7 +101,10 @@ namespace Akka.Streams.Azure.EventHub
             {
                 var completion = new TaskCompletionSource<NotUsed>();
                 _processCallback(new ProcessContext(completion, context, messages));
-                return completion.Task;
+
+                return _source._createCheckpointForEveryBatch
+                    ? Task.WhenAll(completion.Task, context.CheckpointAsync())
+                    : completion.Task;
             }
 
             private void OnProcessEvents(ProcessContext context)
@@ -137,22 +140,26 @@ namespace Akka.Streams.Azure.EventHub
         /// <summary>
         /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure EventHub  
         /// </summary>
-        /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed if set to true</param>
+        /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed, if set to true</param>
+        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that is received from the EventHub, if set to true</param>
         /// <returns>The processor</returns>
-        public static Source<Tuple<PartitionContext, EventData>, IEventProcessor> Create(bool createCheckpointOnClose = true)
+        public static Source<Tuple<PartitionContext, EventData>, IEventProcessor> Create(bool createCheckpointOnClose = true, bool createCheckpointForEveryBatch = false)
         {
             return Source.FromGraph(new EventHubSource(createCheckpointOnClose));
         }
 
         private readonly bool _createCheckpointOnClose;
+        private readonly bool _createCheckpointForEveryBatch;
 
         /// <summary>
         /// Create a new instance of the <see cref="EventHubSource"/> 
         /// </summary>
         /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed if set to true</param>
-        public EventHubSource(bool createCheckpointOnClose = true)
+        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that is received from the EventHub, if set to true</param>
+        public EventHubSource(bool createCheckpointOnClose = true, bool createCheckpointForEveryBatch = false)
         {
             _createCheckpointOnClose = createCheckpointOnClose;
+            _createCheckpointForEveryBatch = createCheckpointForEveryBatch;
             Shape = new SourceShape<Tuple<PartitionContext, EventData>>(Out);
         }
 
