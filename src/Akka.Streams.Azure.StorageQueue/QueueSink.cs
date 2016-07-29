@@ -19,7 +19,7 @@ namespace Akka.Streams.Azure.StorageQueue
         {
             private readonly QueueSink _sink;
             private readonly TaskCompletionSource<NotUsed> _completion;
-            private Action<Tuple<Task, CloudQueueMessage>> _messageAdded;
+            private Action<Tuple<Task, CloudQueueMessage>> _messageAddedCallback;
             private bool _isAddInProgress;
             private readonly Decider _decider;
 
@@ -50,7 +50,7 @@ namespace Akka.Streams.Azure.StorageQueue
             {
                 // Keep going even if the upstream has finished so that we can process the task from the last element
                 SetKeepGoing(true);
-                _messageAdded = GetAsyncCallback<Tuple<Task, CloudQueueMessage>>(MessageAdded);
+                _messageAddedCallback = GetAsyncCallback<Tuple<Task, CloudQueueMessage>>(OnMessageAdded);
                 // Request the first element
                 Pull(_sink.In);
             }
@@ -60,10 +60,10 @@ namespace Akka.Streams.Azure.StorageQueue
                 _isAddInProgress = true;
                 _sink._queue.AddMessageAsync(message, _sink._options.TimeToLive, _sink._options.InitialVisibilityDelay,
                     _sink._options.QueueRequestOptions, _sink._options.OperationContext)
-                    .ContinueWith(t => _messageAdded(Tuple.Create(t, message)));
+                    .ContinueWith(t => _messageAddedCallback(Tuple.Create(t, message)));
             }
             
-            private void MessageAdded(Tuple<Task, CloudQueueMessage> t)
+            private void OnMessageAdded(Tuple<Task, CloudQueueMessage> t)
             {
                 _isAddInProgress = false;
                 var task = t.Item1;

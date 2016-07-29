@@ -10,7 +10,7 @@ using Microsoft.ServiceBus.Messaging;
 namespace Akka.Streams.Azure.EventHub
 {
     /// <summary>
-    ///  A <see cref="Source{TOut,TMat}"/> for the Azure EventHub
+    /// A <see cref="Source{TOut,TMat}"/> for the Azure EventHub
     /// that materialized into an <see cref="IEventProcessor"/>
     /// </summary>
     public class EventHubSource : GraphStageWithMaterializedValue<SourceShape<Tuple<PartitionContext, EventData>>, IEventProcessor>
@@ -141,7 +141,7 @@ namespace Akka.Streams.Azure.EventHub
         /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure EventHub  
         /// </summary>
         /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed, if set to true</param>
-        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that is received from the EventHub, if set to true</param>
+        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that are received from the EventHub, if set to true</param>
         /// <returns>The processor</returns>
         public static Source<Tuple<PartitionContext, EventData>, IEventProcessor> Create(bool createCheckpointOnClose = true, bool createCheckpointForEveryBatch = false)
         {
@@ -155,7 +155,7 @@ namespace Akka.Streams.Azure.EventHub
         /// Create a new instance of the <see cref="EventHubSource"/> 
         /// </summary>
         /// <param name="createCheckpointOnClose">Creates a checkpoint when the processor is closed if set to true</param>
-        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that is received from the EventHub, if set to true</param>
+        /// <param name="createCheckpointForEveryBatch">Creates a checkpoint for every batch of messages that are received from the EventHub, if set to true</param>
         public EventHubSource(bool createCheckpointOnClose = true, bool createCheckpointForEveryBatch = false)
         {
             _createCheckpointOnClose = createCheckpointOnClose;
