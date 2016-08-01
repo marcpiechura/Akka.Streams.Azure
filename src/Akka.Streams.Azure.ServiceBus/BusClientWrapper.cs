@@ -7,7 +7,7 @@ namespace Akka.Streams.Azure.ServiceBus
 {
     internal interface IBusClient
     {
-        void OnMessageAsync(Func<BrokeredMessage, Task> callback, OnMessageOptions options);
+        Task<IEnumerable<BrokeredMessage>> ReceiveBatchAsync(int messageCount, TimeSpan serverWaitTime);
 
         Task SendBatchAsync(IEnumerable<BrokeredMessage> messages);
     }
@@ -21,8 +21,8 @@ namespace Akka.Streams.Azure.ServiceBus
             _client = client;
         }
 
-        public void OnMessageAsync(Func<BrokeredMessage, Task> callback, OnMessageOptions options)
-            => _client.OnMessageAsync(callback, options);
+        public Task<IEnumerable<BrokeredMessage>> ReceiveBatchAsync(int messageCount, TimeSpan serverWaitTime)
+            => _client.ReceiveBatchAsync(messageCount, serverWaitTime);
 
         public Task SendBatchAsync(IEnumerable<BrokeredMessage> messages) => _client.SendBatchAsync(messages);
     }
@@ -36,8 +36,8 @@ namespace Akka.Streams.Azure.ServiceBus
             _client = client;
         }
 
-        public void OnMessageAsync(Func<BrokeredMessage, Task> callback, OnMessageOptions options)
-            => _client.OnMessageAsync(callback, options);
+        public Task<IEnumerable<BrokeredMessage>> ReceiveBatchAsync(int messageCount, TimeSpan serverWaitTime)
+            => _client.ReceiveBatchAsync(messageCount, serverWaitTime);
 
         public Task SendBatchAsync(IEnumerable<BrokeredMessage> messages)
         {
@@ -54,7 +54,7 @@ namespace Akka.Streams.Azure.ServiceBus
             _client = client;
         }
 
-        public void OnMessageAsync(Func<BrokeredMessage, Task> callback, OnMessageOptions options)
+        public Task<IEnumerable<BrokeredMessage>> ReceiveBatchAsync(int messageCount, TimeSpan serverWaitTime)
         {
             throw new NotImplementedException();
         }

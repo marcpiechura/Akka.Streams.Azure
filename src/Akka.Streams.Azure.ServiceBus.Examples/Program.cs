@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Akka.Actor;
 using Akka.Streams.Dsl;
 using Microsoft.ServiceBus.Messaging;
@@ -19,7 +20,7 @@ namespace Akka.Streams.Azure.ServiceBus.Examples
                 using (var mat = sys.Materializer())
                 {
                     Console.WriteLine("Writing messages into the queue");
-                    var t = Source.From(new[] {1, 2, 3})
+                    var t = Source.From(Enumerable.Range(1,100))
                         .Select(x => new BrokeredMessage("Message: " + x))
                         .Grouped(10)
                         .ToServiceBus(client, mat);
@@ -31,6 +32,7 @@ namespace Akka.Streams.Azure.ServiceBus.Examples
                     t = ServiceBusSource.Create(client).Select(x =>
                     {
                         var message = x.GetBody<string>();
+                        x.Complete();
                         return message;
                     }).RunForeach(Console.WriteLine, mat);
                   
