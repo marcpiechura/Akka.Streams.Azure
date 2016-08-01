@@ -100,7 +100,7 @@
     <Compile Include="EventHubSource.cs" />
     <Compile Include="HubClientWrapper.cs" />
     <Compile Include="MultiProcessorFactory.cs" />
-    <Compile Include="SingelProcessorFactory.cs" />
+    <Compile Include="SingleProcessorFactory.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SourceExtension.cs" />
   </ItemGroup>

@@ -36,7 +36,7 @@ namespace Akka.Streams.Azure.EventHub.Examples
                     Console.WriteLine("Registering EventProcessor...");
                     var options = new EventProcessorOptions();
                     options.ExceptionReceived += (sender, e) => { Console.WriteLine(e.Exception); };
-                    eventProcessorHost.RegisterEventProcessorFactoryAsync(new SingelProcessorFactory(processor));
+                    eventProcessorHost.RegisterEventProcessorFactoryAsync(new SingleProcessorFactory(processor));
 
                     Console.WriteLine("Processor registered...");
                     Console.WriteLine("Press enter key to send some messages into the EventHub.");
