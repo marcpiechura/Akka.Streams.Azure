@@ -1,11 +1,11 @@
 # Azure Storage Queue adapter
 
 
-#### QueueSource
+## QueueSource
 
 You can create a `Source` for the Storage Queue either via `Source.FromGraph(new QueueSource)` or by calling the `QueueSource.Create` method. 
 
-By default the `Source` will fail the stream if a call to the queue for new messages failed, you can change that behavior by using `Restart` or `Resume` `SupervisionStrategy`.
+By default the `Source` will completes the stream with failure if a call to the queue for new messages failed, you can change that behavior by using `Restart` or `Resume` `SupervisionStrategy`.
 
 ```csharp
 QueueSource.Create(Queue, pollInterval: TimeSpan.FromSeconds(1))
@@ -23,10 +23,23 @@ This will send the next request to the queue once the first five messages have b
 
 If the queue is empty the source will periodically poll for new messages, this interval can be configured via the `pollInterval` parameter, by default 10 seconds.
 
-#### QueueSink
+Additional parameter for the `CloudQueue.GetMessagesAsync` call can be set via the `options` parameter.
 
-TODO
 
-#### Examples
+## QueueSink
+
+You can create a `Sink` for the Storage Queue either via `Sink.FromGraph(new QueueSink)` or by calling the `QueueSink.Create` method or use the extension method `ToStorageQueue` on a `Source<CloudQueueMessage, TMat>` directly.
+The `Sink` is materialized into a `Task` which will be completed with `Success` when reaching the normal end of the stream, or completed with `Failure` if there is a failure signaled in the stream.
+
+You can configure different behaviors if a message couldn't be added to the queue by using the `SupervisionStrategy` attribute, the following behaviors are available: 
+
+- `Stop`: Default behavior, completes the stream with failure. 
+- `Resume`: Sends the message again. 
+- `Restart`: Skips the current message and continues with the next message.  
+
+  
+Additional parameter for the `CloudQueue.AddMessageAsync` call can be set via the `options` parameter.
+
+## Examples
 
 You can find some examples in the [test project](https://github.com/Silv3rcircl3/Akka.Streams.Azure/tree/master/src/Akka.Streams.Azure.StorageQueue.Tests).
