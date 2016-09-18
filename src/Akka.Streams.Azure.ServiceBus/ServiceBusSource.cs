@@ -10,21 +10,115 @@ using Microsoft.ServiceBus.Messaging;
 
 namespace Akka.Streams.Azure.ServiceBus
 {
+    public static class ServiceBusSource
+    {
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<BrokeredMessage, NotUsed> Create(QueueClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Create(client, msg => msg, maxMessageCount, serverWaitTime, pollInterval);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<BrokeredMessage, NotUsed> Create(SubscriptionClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Create(client, msg => msg, maxMessageCount, serverWaitTime, pollInterval);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="extractor">Extracts the message from the <see cref="BrokeredMessage"/></param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<T, NotUsed> Create<T>(QueueClient client, Func<BrokeredMessage, T> extractor, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Source.FromGraph(new ServiceBusSource<T>(new QueueClientWrapper(client), maxMessageCount, serverWaitTime, pollInterval, extractor));
+        }
+
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="extractor">Extracts the message from the <see cref="BrokeredMessage"/></param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<T, NotUsed> Create<T>(SubscriptionClient client, Func<BrokeredMessage, T> extractor, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Source.FromGraph(new ServiceBusSource<T>(new SubscriptionClientWrapper(client), maxMessageCount, serverWaitTime, pollInterval, extractor));
+        }
+
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus.
+        /// <para>
+        /// Note: The message of type <typeparamref name="T"/> is extracted via <see cref="BrokeredMessage.GetBody{T}"/> and the <see cref="BrokeredMessage"/> is automatically completed.
+        /// </para>
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<T, NotUsed> Create<T>(QueueClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Create(client, msg =>
+            {
+                var result = msg.GetBody<T>();
+                msg.Complete();
+                return result;
+            }, maxMessageCount, serverWaitTime, pollInterval);
+        }
+
+        /// <summary>
+        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
+        /// <para>
+        /// Note: The message of type <typeparamref name="T"/> is extracted via <see cref="BrokeredMessage.GetBody{T}"/> and the <see cref="BrokeredMessage"/> is automatically completed.
+        /// </para>
+        /// </summary>
+        /// <param name="client">The client</param>
+        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
+        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
+        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
+        public static Source<T, NotUsed> Create<T>(SubscriptionClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
+        {
+            return Create(client, msg =>
+            {
+                var result = msg.GetBody<T>();
+                msg.Complete();
+                return result;
+            }, maxMessageCount, serverWaitTime, pollInterval);
+        }
+    }
+
+
     /// <summary>
     /// a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus
     /// </summary>
-    public class ServiceBusSource : GraphStage<SourceShape<BrokeredMessage>>
+    internal class ServiceBusSource<T> : GraphStage<SourceShape<T>>
     {
         #region Logic
 
         private sealed class Logic : TimerGraphStageLogic
         {
             private const string TimerKey = "PollTimer";
-            private readonly ServiceBusSource _source;
+            private readonly ServiceBusSource<T> _source;
             private readonly Decider _decider;
             private Action<Task<IEnumerable<BrokeredMessage>>> _messagesReceived;
 
-            public Logic(ServiceBusSource source, Attributes attributes) :  base(source.Shape)
+            public Logic(ServiceBusSource<T> source, Attributes attributes) :  base(source.Shape)
             {
                 _source = source;
                 _decider = attributes.GetDeciderOrDefault();
@@ -55,7 +149,7 @@ namespace Akka.Streams.Azure.ServiceBus
                 if (task.Result == null || !task.Result.Any())
                     ScheduleOnce(TimerKey, _source._pollInterval);
                 else
-                    EmitMultiple(_source.Out, task.Result);
+                    EmitMultiple(_source.Out, task.Result.Select(_source._extractor));
             }
 
             protected override void OnTimer(object timerKey) => PullQueue();
@@ -63,74 +157,26 @@ namespace Akka.Streams.Azure.ServiceBus
 
         #endregion
 
-        /// <summary>
-        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
-        /// </summary>
-        /// <param name="client">The client</param>
-        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
-        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
-        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
-        public static Source<BrokeredMessage, NotUsed> Create(QueueClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
-        {
-            return Source.FromGraph(new ServiceBusSource(client, maxMessageCount, serverWaitTime, pollInterval));
-        }
-
-        /// <summary>
-        /// Creates a <see cref="Source{TOut,TMat}"/> for the Azure ServiceBus  
-        /// </summary>
-        /// <param name="client">The client</param>
-        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
-        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
-        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
-        public static Source<BrokeredMessage, NotUsed> Create(SubscriptionClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
-        {
-            return Source.FromGraph(new ServiceBusSource(client, maxMessageCount, serverWaitTime, pollInterval));
-        }
-
         private readonly IBusClient _client;
         private readonly int _maxMessageCount;
         private readonly TimeSpan _serverWaitTime;
         private readonly TimeSpan _pollInterval;
+        private readonly Func<BrokeredMessage, T> _extractor;
 
-        private ServiceBusSource(IBusClient client, int maxMessageCount, TimeSpan? serverWaitTime, TimeSpan? pollInterval)
+        internal ServiceBusSource(IBusClient client, int maxMessageCount, TimeSpan? serverWaitTime, TimeSpan? pollInterval, Func<BrokeredMessage, T> extractor)
         {
             _client = client;
             _maxMessageCount = maxMessageCount;
             _serverWaitTime = serverWaitTime ?? TimeSpan.FromSeconds(3);
             _pollInterval = pollInterval ?? TimeSpan.FromSeconds(10);
+            _extractor = extractor;
 
-            Shape = new SourceShape<BrokeredMessage>(Out);
+            Shape = new SourceShape<T>(Out);
         }
 
-        /// <summary>
-        /// Create a new instance of the <see cref="ServiceBusSource"/> 
-        /// </summary>
-        /// <param name="client">The client</param>
-        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
-        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
-        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
-        public ServiceBusSource(QueueClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
-            : this(new QueueClientWrapper(client), maxMessageCount, serverWaitTime, pollInterval)
-        {
+        public Outlet<T> Out { get; } = new Outlet<T>("ServiceBusSource.Out");
 
-        }
-
-        /// <summary>
-        /// Create a new instance of the <see cref="ServiceBusSource"/> 
-        /// </summary>
-        /// <param name="client">The client</param>
-        /// <param name="maxMessageCount">The maximum number of messages to receive in a batch</param>
-        /// <param name="serverWaitTime">The time span that the server will wait for the message batch to arrive before it times out. Default = 3 seconds</param>
-        /// <param name="pollInterval">The intervall in witch the queue should be polled if it is empty. Default = 10 seconds</param>
-        public ServiceBusSource(SubscriptionClient client, int maxMessageCount = 100, TimeSpan? serverWaitTime = null, TimeSpan? pollInterval = null)
-            : this(new SubscriptionClientWrapper(client), maxMessageCount, serverWaitTime, pollInterval)
-        {
-
-        }
-
-        public Outlet<BrokeredMessage> Out { get; } = new Outlet<BrokeredMessage>("ServiceBusSource.Out");
-
-        public override SourceShape<BrokeredMessage> Shape { get; }
+        public override SourceShape<T> Shape { get; }
 
         protected override GraphStageLogic CreateLogic(Attributes inheritedAttributes)
             => new Logic(this, inheritedAttributes);

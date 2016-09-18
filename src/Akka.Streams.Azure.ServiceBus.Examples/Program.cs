@@ -29,12 +29,7 @@ namespace Akka.Streams.Azure.ServiceBus.Examples
 
 
                     Console.WriteLine("Reading messages from the queue");
-                    t = ServiceBusSource.Create(client).Select(x =>
-                    {
-                        var message = x.GetBody<string>();
-                        x.Complete();
-                        return message;
-                    }).RunForeach(Console.WriteLine, mat);
+                    t = ServiceBusSource.Create<string>(client).RunForeach(Console.WriteLine, mat);
                   
                     Console.WriteLine("Press any key to exit");
                     Console.ReadKey();

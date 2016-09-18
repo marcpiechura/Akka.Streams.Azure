@@ -6,6 +6,8 @@
         <title>Azure adapter for Akka.Streams</title>
         <authors>Marc Piechura</authors>
         <owners>Marc Piechura</owners>
+        <projectUrl>https://github.com/Silv3rcircl3/Akka.Streams.Azure</projectUrl>
+        <iconUrl>http://getakka.net/images/AkkaNetLogo.Normal.png</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Akka.Streams adapter for Azure Storage Queue, EventHub and ServiceBus</description>
         <releaseNotes />
