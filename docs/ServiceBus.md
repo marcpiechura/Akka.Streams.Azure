@@ -3,7 +3,12 @@
 
 ## ServiceBusSource
 
-You can create a `Source` for the ServiceBus either via `Source.FromGraph(new ServiceBusSource)` or by calling the `ServiceBusSource.Create` method. 
+You can create a `Source` for the ServiceBus via one of the `ServiceBusSource.Create` factory methods. 
+ - `Create<T>(client)` extracts the message via `brokered.GetBody<T>()` and completes the original `BrokeredMessage` before emits downstream
+ - `Create(client)` emit's the raw `BrokeredMessage`'s downstream
+ - `Create<T>(client, msg => {...}` can be used for custom extraction and or completion
+
+> Note: You're responsible for marking processed messages as completed if you're not using the first factory.
 
 By default the `Source` will complete the stream with failure if a call to the ServiceBus for new messages failed, you can change that behavior by using `Restart` or `Resume` `SupervisionStrategy`.
 
@@ -12,8 +17,6 @@ If the ServiceBus is empty the source will periodically poll for new messages, t
 You can furthermore configure the time span that the server will wait for the message batch to arrive before it times out by setting the `serverWaitTime` parameter, default is 3 seconds.
 
 The `Source` supports the `QueueClient` as well as the `SubscriptionClient`.
-
-> Note: You're responsible for marking processed messages as completed.
 
 ## ServiceBusSink
 
